@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base target="_top">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Phetsarath&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    body { font-family: 'Phetsarath', sans-serif; padding: 20px; background-color: #f8f9fa; }
+    .card { margin-bottom: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .header { background: #007bff; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    #appContent { display: none; }
+    #loginSection { max-width: 400px; margin: 80px auto; }
+    #loader {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+<div id="loader">
+  <div class="spinner-grow text-primary" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
+  <div class="mt-3 h5 text-primary fw-bold">ກຳລັງປະມວນຜົນ...</div>
+</div>
+
+<!-- Modal ສຳລັບລາຍງານບັນຫາ -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reportModalLabel">📝 ສົ່ງລາຍງານບັນຫາໃໝ່</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="reportForm">
+          <input type="hidden" id="editItemId">
+          <div class="mb-3">
+            <label class="form-label">ລາຍການບັນຫາ:</label>
+            <input type="text" id="issue" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">ສະຖານທີ່:</label>
+            <input type="text" id="location" class="form-control" required>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ຍົກເລີກ</button>
+            <button type="submit" id="reportFormButton" class="btn btn-primary">ສົ່ງລາຍງານ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ສ່ວນການເຂົ້າລະບົບ (Login Screen) -->
+<div id="loginSection">
+  <div class="card p-4 shadow-sm border-0">
+    <h3 class="text-center mb-4">ເຂົ້າສູ່ລະບົບ</h3>
+    <form id="loginForm">
+      <div class="mb-3 text-start">
+        <label class="form-label">ຊື່ ແລະ ນາມສະກຸນ:</label>
+        <input type="text" id="userName" class="form-control" placeholder="ໃສ່ຊື່ຂອງທ່ານ" required>
+      </div>
+      <div class="mb-4 text-start">
+        <label class="form-label">ຕຳແໜ່ງການເຮັດວຽກ:</label>
+        <select id="userPosition" class="form-select" required>
+          <option value="" disabled selected>-- ເລືອກຕຳແໜ່ງ --</option>
+          <option value="ຜູ້ລາຍງານ">ຜູ້ລາຍງານ</option>
+          <option value="ຊ່າງຊ້ອມແປງ">ຊ່າງຊ້ອມແປງ</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">ເຂົ້າສູ່ລະບົບ</button>
+    </form>
+  </div>
+</div>
+
+<!-- ສ່ວນເນື້ອຫາຫຼັກຂອງລະບົບ (Main Content) -->
+<div id="appContent" class="container">
+  <div class="header text-center">
+    <div class="d-flex justify-content-between align-items-center px-3">
+      <div style="width: 80px;"></div>
+      <h2 class="mb-0">ລະບົບລາຍງານບັນຫາ ແລະ ການຊ້ອມແປງ</h2>
+      <button class="btn btn-sm btn-outline-light" onclick="logout()">ອອກລະບົບ</button>
+    </div>
+    <div id="userInfoDisplay" class="mt-2 small text-light opacity-75"></div>
+  </div>
+
+  <!-- ເມນູສຳລັບຊ່າງຊ້ອມແປງ -->
+  <div id="repairerMenu" class="mb-4" style="display: none;">
+    <div class="dropdown d-grid shadow-sm">
+      <button class="btn btn-primary dropdown-toggle fw-bold" type="button" id="filterDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">
+        ລາຍການທັງໝົດ
+      </button>
+      <ul class="dropdown-menu w-100" aria-labelledby="filterDropdownButton">
+        <li><a class="dropdown-item active" href="#" onclick="setFilter('all', this)">ລາຍການທັງໝົດ</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setFilter('new', this)" id="dropdownFilterNew">ລາຍການເພີ່ມໃໝ່</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setFilter('repairing', this)">ກຳລັງຊ້ອມແປງ</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setFilter('my', this)">ວຽກຊ້ອມຂອງຂ້ອຍ</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setFilter('completed', this)">ປະຫວັດສຳເລັດທັງໝົດ</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ປຸ່ມເປີດ Modal (ຊ່ອນສຳລັບຊ່າງຊ້ອມແປງ) -->
+  <div id="addReportBtnContainer" class="mb-3 text-end">
+    <button id="addReportBtn" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#reportModal">
+      ➕ ສົ່ງລາຍງານບັນຫາໃໝ່
+    </button>
+  </div>
+
+  <!-- ຕາຕະລາງສະແດງຂໍ້ມູນ -->
+  <div class="card p-4">
+    <h4>📋 ລາຍການບັນຫາທັງໝົດ</h4>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped text-nowrap">
+        <thead class="table-dark">
+          <tr>
+            <th>ບັນຫາ</th>
+            <th>ສະຖານທີ່</th>
+            <th>ວັນທີລາຍງານ</th>
+            <th>ຜູ້ລາຍງານ</th>
+            <th>ວັນທີດຳເນີນການ</th>
+            <th>ຜູ້ຊ້ອມແປງ</th>
+            <th>ສະຖານະ</th>
+            <th>ຈັດການ</th>
+          </tr>
+        </thead>
+        <tbody id="dataTable">
+          <!-- ຂໍ້ມູນຈະມາສະແດງຢູ່ບ່ອນນີ້ -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ແທນທີ່ດ້ວຍ URL ທີ່ໄດ້ຈາກການ Deploy (Web App URL)
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw-kh6nK95g7-J2V_iHdL6-Jn9Ek_CK1oucTCeWBg6lnLdZMFQD4o7X6Uj1L9RnFHeH/exec";
+
+  let currentUser = null;
+  let currentFilter = 'all';
+  let lastDataJson = ""; // ເກັບຂໍ້ມູນເກົ່າໄວ້ປຽບທຽບ
+  let lastFilterState = ""; // ເກັບສະຖານະ Filter ເກົ່າໄວ້ປຽບທຽບ
+  let isFetching = false; // ປ້ອງກັນການ Fetch ຊ້ຳຊ້ອນ
+
+  // ກວດສອບການເຂົ້າລະບົບເມື່ອໂຫຼດໜ້າເວັບ
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedUser = localStorage.getItem('repair_system_user');
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      showMainContent();
+      loadData(true); // ໂຫຼດເທື່ອທຳອິດໃຫ້ສະແດງ Spinner
+    }
+
+    // ລ້າງຟອມເມື່ອປິດ Modal
+    const modalEl = document.getElementById('reportModal');
+    modalEl.addEventListener('hidden.bs.modal', cancelEdit);
+
+    // ຕັ້ງເວລາໃຫ້ກວດສອບຂໍ້ມູນໃໝ່ທຸກໆ 5 ວິນາທີ (ປັບໃຫ້ສະຖຽນຂຶ້ນ)
+    setInterval(() => {
+      if (currentUser) loadData(false); 
+    }, 5000);
+  });
+
+  function showMainContent() {
+    document.getElementById('loginSection').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    document.getElementById('userInfoDisplay').innerText = `ຜູ້ໃຊ້: ${currentUser.name} | ຕຳແໜ່ງ: ${currentUser.position}`;
+    
+    // ກວດສອບຕຳແໜ່ງເພື່ອສະແດງ ຫຼື ເຊື່ອງປຸ່ມສົ່ງລາຍງານໃຫ້ຖືກຕ້ອງ
+    const isRepairer = currentUser.position.trim() === 'ຊ່າງຊ້ອມແປງ';
+    document.getElementById('addReportBtnContainer').style.display = isRepairer ? 'none' : 'block';
+    document.getElementById('repairerMenu').style.display = isRepairer ? 'block' : 'none';
+  }
+
+  function setFilter(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll('#repairerMenu .dropdown-item').forEach(item => item.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('filterDropdownButton').innerHTML = el.innerHTML;
+    loadData(false);
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('userName').value;
+    const position = document.getElementById('userPosition').value;
+    
+    currentUser = { name, position };
+    localStorage.setItem('repair_system_user', JSON.stringify(currentUser));
+    showMainContent();
+    loadData(true);
+  });
+
+  function logout() {
+    localStorage.removeItem('repair_system_user');
+    location.reload(); 
+  }
+
+  function toggleLoader(show) {
+    document.getElementById('loader').style.display = show ? 'flex' : 'none';
+  }
+
+  function handleError(error) {
+    toggleLoader(false);
+    isFetching = false;
+    
+    // ຖ້າ Error ເກີດຈາກການ Refresh ຫຼື ຍົກເລີກ Fetch ບໍ່ຕ້ອງໃຫ້ Alert
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.warn("Network request failed or was aborted.");
+    } else {
+      alert("ເກີດຂໍ້ຜິດພາດ: " + error.message);
+    }
+  }
+
+  // ຟັງຊັນບັນທຶກລາຍງານ
+  document.getElementById('reportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (isFetching) return;
+    
+    if (currentUser.position.trim() === 'ຊ່າງຊ້ອມແປງ') {
+      alert("ຂໍອະໄພ, ຊ່າງຊ້ອມແປງບໍ່ມີສິດສົ່ງລາຍງານບັນຫາໃໝ່.");
+      return;
+    }
+
+    const itemId = document.getElementById('editItemId').value;
+    toggleLoader(true);
+    isFetching = true;
+    
+    const reportData = {
+      issue: document.getElementById('issue').value,
+      location: document.getElementById('location').value,
+      reporter: currentUser.name // ໃຊ້ຊື່ຈາກຜູ້ໃຊ້ທີ່ເຂົ້າລະບົບໂດຍກົງ
+    };
+    
+    let actionType = itemId ? 'edit' : 'save';
+    let payload = itemId 
+      ? { action: 'edit', id: itemId, issue: reportData.issue, location: reportData.location, reporterName: currentUser.name }
+      : { action: 'save', data: reportData };
+
+    fetch(WEB_APP_URL, {
+      method: 'POST',
+      // ບໍ່ໃສ່ headers ເພື່ອປ້ອງກັນ CORS Preflight Error
+      body: JSON.stringify(payload)
+    })
+    .then(response => response.json()) // ປ່ຽນເປັນອ່ານ JSON Response
+    .then(data => {
+      toggleLoader(false);
+      isFetching = false;
+      if (data.status === 'success') {
+        alert(data.message);
+        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+        if (modalInstance) modalInstance.hide();
+        loadData();
+      } else {
+        alert("ຂໍ້ຜິດພາດ: " + data.message);
+      }
+    })
+    .catch(handleError);
+  });
+
+  function editReportForm(id, issue, location) {
+    document.getElementById('editItemId').value = id;
+    document.getElementById('issue').value = issue;
+    document.getElementById('location').value = location;
+    document.getElementById('reportFormButton').innerText = 'ອັບເດດລາຍງານ';
+    document.getElementById('reportModalLabel').innerText = '📝 ແກ້ໄຂລາຍງານບັນຫາ';
+    new bootstrap.Modal(document.getElementById('reportModal')).show();
+  }
+
+  function cancelEdit() {
+    document.getElementById('reportForm').reset();
+    document.getElementById('editItemId').value = '';
+    document.getElementById('reportFormButton').innerText = 'ສົ່ງລາຍງານ';
+    document.getElementById('reportModalLabel').innerText = '📝 ສົ່ງລາຍງານບັນຫາໃໝ່';
+  }
+
+  function deleteReport(id) {
+    if (confirm("ທ່ານແນ່ໃຈຫຼືບໍ່ວ່າຕ້ອງການລຶບລາຍງານນີ້?")) {
+      if (isFetching) return;
+      toggleLoader(true);
+      isFetching = true;
+
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          action: 'delete', 
+          id: id, 
+          reporterName: currentUser.name 
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        toggleLoader(false);
+        isFetching = false;
+        if (data.status === 'success') {
+          alert(data.message);
+          loadData();
+        } else {
+          alert("ຂໍ້ຜິດພາດ: " + data.message);
+        }
+      })
+      .catch(handleError);
+    }
+  }
+
+  function loadData(showSpinner = false) {
+    if (isFetching) return; // ຖ້າກຳລັງໂຫຼດຢູ່ ບໍ່ຕ້ອງເຮັດຊ້ຳ
+    if (showSpinner) toggleLoader(true);
+    isFetching = true;
+    
+    fetch(WEB_APP_URL + "?action=read")
+      .then(response => response.json())
+      .then(jsonResponse => {
+        if (showSpinner) toggleLoader(false);
+        isFetching = false;
+        
+        if (jsonResponse.status === 'error') {
+          alert("ຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ: " + jsonResponse.message);
+          return;
+        }
+
+        const data = jsonResponse.data; // ດຶງຂໍ້ມູນຕົວຈິງອອກມາ
+        const currentJson = JSON.stringify(data); 
+        
+        // ອັບເດດການແຈ້ງເຕືອນ (Badge) ໃນເມນູຊ່າງ
+        if (currentUser && currentUser.position.trim() === 'ຊ່າງຊ້ອມແປງ') {
+          const newCount = data.filter(row => (row[8] || 'ລໍຖ້າຊ້ອມແປງ') === 'ລໍຖ້າຊ້ອມແປງ').length;
+          const dropdownFilterNew = document.getElementById('dropdownFilterNew');
+          if (dropdownFilterNew) {
+            const originalText = 'ລາຍການເພີ່ມໃໝ່';
+            dropdownFilterNew.innerHTML = `${originalText} ${newCount > 0 ? `<span class="badge rounded-pill bg-danger ms-2">${newCount}</span>` : ''}`;
+
+            // If 'new' filter is currently active, update the main dropdown button text as well
+            if (currentFilter === 'new') {
+              document.getElementById('filterDropdownButton').innerHTML = dropdownFilterNew.innerHTML;
+            }
+          }
+        }
+
+        // ປັບປຸງ: ຖ້າຂໍ້ມູນຄືເກົ່າ ແລະ Filter ກໍ່ຄືເກົ່າ ແມ່ນບໍ່ຕ້ອງ Render ໃໝ່
+        if (currentJson === lastDataJson && currentFilter === lastFilterState) return;
+        
+        lastDataJson = currentJson;
+        lastFilterState = currentFilter;
+
+        const tbody = document.getElementById('dataTable');
+        tbody.innerHTML = '';
+        data.forEach(row => {
+          const status = row[8] || 'ລໍຖ້າຊ້ອມແປງ';
+
+          let showRow = false; // ຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ false
+          const userPos = currentUser.position.trim();
+          
+          if (userPos === 'ຊ່າງຊ້ອມແປງ') {
+            if (currentFilter === 'all') {
+              showRow = true; // ຖ້າເລືອກ "ລາຍການທັງໝົດ" ແມ່ນສະແດງທຸກແຖວ
+            } else if (currentFilter === 'new') {
+              showRow = (status === 'ລໍຖ້າຊ້ອມແປງ');
+            } else if (currentFilter === 'repairing') {
+              showRow = (status === 'ກຳລັງຊ້ອມແປງ');
+            } else if (currentFilter === 'my') {
+              showRow = (status === 'ກຳລັງຊ້ອມແປງ' && row[7] === currentUser.name);
+            } else if (currentFilter === 'completed') {
+              showRow = (status === 'ສຳເລັດແລ້ວ');
+            }
+          } else { // ສຳລັບຜູ້ລາຍງານ, ໃຫ້ສະແດງທຸກລາຍການ (ເພາະບໍ່ມີເມນູ Filter)
+            showRow = true;
+          }
+          if (!showRow) return;
+
+          const tr = document.createElement('tr');
+          
+          // ກຳນົດປຸ່ມຈັດການຕາມສະຖານະ ແລະ ສິດ
+          let actionBtn = '';
+          if (userPos === 'ຊ່າງຊ້ອມແປງ') {
+            if (status === 'ລໍຖ້າຊ້ອມແປງ') {
+              actionBtn = `<button class="btn btn-sm btn-primary" onclick="updateStatus('${row[0]}', 'accept')">ຮັບຊ້ອມ</button>`;
+            } else if (status === 'ກຳລັງຊ້ອມແປງ' && row[7] === currentUser.name) {
+              actionBtn = `<button class="btn btn-sm btn-success" onclick="updateStatus('${row[0]}', 'complete')">ປິດວຽກ</button>`;
+            } else if (status === 'ສຳເລັດແລ້ວ') {
+              actionBtn = '<span class="badge bg-success">ສຳເລັດ</span>';
+            }
+          } else {
+            if (row[4] === currentUser.name && status === 'ລໍຖ້າຊ້ອມແປງ') {
+              actionBtn = `
+                <button class="btn btn-sm btn-warning me-1" onclick="editReportForm('${row[0]}', '${row[1]}', '${row[2]}')">ແກ້ໄຂ</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteReport('${row[0]}')">ລຶບ</button>
+              `;
+            } else {
+              actionBtn = status === 'ສຳເລັດແລ້ວ' ? '✅' : '⏳';
+            }
+          }
+
+          const statusClass = status === 'ລໍຖ້າຊ້ອມແປງ' ? 'text-danger' : (status === 'ກຳລັງຊ້ອມແປງ' ? 'text-warning' : 'text-success');
+
+          tr.innerHTML = `
+            <td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td>
+            <td>${(status === 'ສຳເລັດແລ້ວ' && row[6]) ? row[6] : (row[5] || '-')}</td>
+            <td>${row[7] || '-'}</td>
+            <td class="fw-bold ${statusClass}">${status}</td>
+            <td class="text-center">${actionBtn}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }).catch(handleError);
+  }
+
+  function updateStatus(id, action) {
+    const confirmMsg = action === 'accept' ? "ຢືນຢັນການຮັບວຽກຊ້ອມແປງ?" : "ຢືນຢັນການປິດວຽກຊ້ອມແປງ?";
+    if (confirm(confirmMsg)) {
+      toggleLoader(true);
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          action: 'update', 
+          id: id, 
+          repairer: currentUser.name, 
+          statusAction: action 
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        toggleLoader(false);
+        if (data.status === 'success') {
+          alert(data.message);
+          loadData();
+        } else {
+          alert("ຂໍ້ຜິດພາດ: " + data.message);
+        }
+      })
+      .catch(handleError);
+    }
+  }
+</script>
+</body>
+</html>
