@@ -6,12 +6,17 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Phetsarath&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <style>
     body { font-family: 'Phetsarath', sans-serif; padding: 20px; background-color: #f8f9fa; }
     .card { margin-bottom: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .header { background: #007bff; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
     #appContent { display: none; }
     #loginSection { max-width: 400px; margin: 80px auto; }
+    .lang-switcher { 
+      text-align: center;
+      margin-bottom: 15px;
+    }
     #loader {
       display: none;
       position: fixed;
@@ -24,12 +29,13 @@
       justify-content: center;
       align-items: center;
     }
+    .row-waiting { background-color: #ffe5e5 !important; } /* ສີແດງອ່ອນສຳລັບລໍຖ້າຊ້ອມ */
   </style>
 </head>
 <body>
 <div id="loader">
   <div class="spinner-grow text-primary" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-  <div class="mt-3 h5 text-primary fw-bold">ກຳລັງປະມວນຜົນ...</div>
+  <div class="mt-3 h5 text-primary fw-bold" data-i18n="processing">ກຳລັງປະມວນຜົນ...</div>
 </div>
 
 <!-- Modal ສຳລັບລາຍງານບັນຫາ -->
@@ -37,23 +43,23 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="reportModalLabel">📝 ສົ່ງລາຍງານບັນຫາໃໝ່</h5>
+        <h5 class="modal-title" id="reportModalLabel" data-i18n="modalTitleNew">📝 ສົ່ງລາຍງານບັນຫາໃໝ່</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form id="reportForm">
           <input type="hidden" id="editItemId">
           <div class="mb-3">
-            <label class="form-label">ລາຍການບັນຫາ:</label>
+            <label class="form-label" data-i18n="labelIssue">ລາຍການບັນຫາ:</label>
             <input type="text" id="issue" class="form-control" required>
           </div>
           <div class="mb-3">
-            <label class="form-label">ສະຖານທີ່:</label>
+            <label class="form-label" data-i18n="labelLocation">ສະຖານທີ່:</label>
             <input type="text" id="location" class="form-control" required>
           </div>
           <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ຍົກເລີກ</button>
-            <button type="submit" id="reportFormButton" class="btn btn-primary">ສົ່ງລາຍງານ</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="btnCancel">ຍົກເລີກ</button>
+            <button type="submit" id="reportFormButton" class="btn btn-primary" data-i18n="btnSubmit">ສົ່ງລາຍງານ</button>
           </div>
         </form>
       </div>
@@ -64,21 +70,25 @@
 <!-- ສ່ວນການເຂົ້າລະບົບ (Login Screen) -->
 <div id="loginSection">
   <div class="card p-4 shadow-sm border-0">
-    <h3 class="text-center mb-4">ເຂົ້າສູ່ລະບົບ</h3>
+    <h3 class="text-center mb-4" data-i18n="loginHeader">ເຂົ້າສູ່ລະບົບ</h3>
     <form id="loginForm">
       <div class="mb-3 text-start">
-        <label class="form-label">ຊື່ ແລະ ນາມສະກຸນ:</label>
-        <input type="text" id="userName" class="form-control" placeholder="ໃສ່ຊື່ຂອງທ່ານ" required>
+        <label class="form-label" data-i18n="labelFullName">ຊື່ ແລະ ນາມສະກຸນ:</label>
+        <input type="text" id="userName" class="form-control" required>
       </div>
       <div class="mb-4 text-start">
-        <label class="form-label">ຕຳແໜ່ງການເຮັດວຽກ:</label>
+        <label class="form-label" data-i18n="labelPosition">ຕຳແໜ່ງການເຮັດວຽກ:</label>
         <select id="userPosition" class="form-select" required>
-          <option value="" disabled selected>-- ເລືອກຕຳແໜ່ງ --</option>
-          <option value="ຜູ້ລາຍງານ">ຜູ້ລາຍງານ</option>
-          <option value="ຊ່າງຊ້ອມແປງ">ຊ່າງຊ້ອມແປງ</option>
+          <option value="" disabled selected data-i18n="optSelectPosition">-- ເລືອກຕຳແໜ່ງ --</option>
+          <option value="ຜູ້ລາຍງານ" data-i18n="roleReporter">ຜູ້ລາຍງານ</option>
+          <option value="ຊ່າງຊ້ອມແປງ" data-i18n="roleRepairer">ຊ່າງຊ້ອມແປງ</option>
         </select>
       </div>
-      <button type="submit" class="btn btn-primary w-100">ເຂົ້າສູ່ລະບົບ</button>
+      <div class="lang-switcher">
+        <button class="lang-btn btn btn-sm btn-outline-secondary" onclick="switchLang('lo')">🇱🇦 ລາວ</button>
+        <button class="lang-btn btn btn-sm btn-outline-secondary" onclick="switchLang('en')">🇺🇸 EN</button>
+      </div>
+      <button type="submit" class="btn btn-primary w-100" data-i18n="btnLogin">ເຂົ້າສູ່ລະບົບ</button>
     </form>
   </div>
 </div>
@@ -88,8 +98,8 @@
   <div class="header text-center">
     <div class="d-flex justify-content-between align-items-center px-3">
       <div style="width: 80px;"></div>
-      <h2 class="mb-0">ລະບົບລາຍງານບັນຫາ ແລະ ການຊ້ອມແປງ</h2>
-      <button class="btn btn-sm btn-outline-light" onclick="logout()">ອອກລະບົບ</button>
+      <h2 class="mb-0" data-i18n="appTitle">ລະບົບລາຍງານບັນຫາ ແລະ ການຊ້ອມແປງ</h2>
+      <button class="btn btn-sm btn-outline-light" onclick="logout()" data-i18n="btnLogout">ອອກລະບົບ</button>
     </div>
     <div id="userInfoDisplay" class="mt-2 small text-light opacity-75"></div>
   </div>
@@ -97,41 +107,44 @@
   <!-- ເມນູສຳລັບຊ່າງຊ້ອມແປງ -->
   <div id="repairerMenu" class="mb-4" style="display: none;">
     <div class="dropdown d-grid shadow-sm">
-      <button class="btn btn-primary dropdown-toggle fw-bold" type="button" id="filterDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">
+      <button class="btn btn-primary dropdown-toggle fw-bold" type="button" id="filterDropdownButton" data-bs-toggle="dropdown" aria-expanded="false" data-i18n="filterAll">
         ລາຍການທັງໝົດ
       </button>
       <ul class="dropdown-menu w-100" aria-labelledby="filterDropdownButton">
-        <li><a class="dropdown-item active" href="#" onclick="setFilter('all', this)">ລາຍການທັງໝົດ</a></li>
-        <li><a class="dropdown-item" href="#" onclick="setFilter('new', this)" id="dropdownFilterNew">ລາຍການເພີ່ມໃໝ່</a></li>
-        <li><a class="dropdown-item" href="#" onclick="setFilter('repairing', this)">ກຳລັງຊ້ອມແປງ</a></li>
-        <li><a class="dropdown-item" href="#" onclick="setFilter('my', this)">ວຽກຊ້ອມຂອງຂ້ອຍ</a></li>
-        <li><a class="dropdown-item" href="#" onclick="setFilter('completed', this)">ປະຫວັດສຳເລັດທັງໝົດ</a></li>
+        <li><a class="dropdown-item active" href="#" onclick="setFilter('all', this)" data-i18n="filterAll">ລາຍການທັງໝົດ</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setFilter('new', this)" id="dropdownFilterNew" data-i18n="filterNew">ລາຍການເພີ່ມໃໝ່</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setFilter('repairing', this)" data-i18n="filterRepairing">ກຳລັງຊ້ອມແປງ</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setFilter('my', this)" data-i18n="filterMyTasks">ວຽກຊ້ອມຂອງຂ້ອຍ</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setFilter('completed', this)" data-i18n="filterCompleted">ປະຫວັດສຳເລັດທັງໝົດ</a></li>
       </ul>
     </div>
   </div>
 
-  <!-- ປຸ່ມເປີດ Modal (ຊ່ອນສຳລັບຊ່າງຊ້ອມແປງ) -->
-  <div id="addReportBtnContainer" class="mb-3 text-end">
-    <button id="addReportBtn" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#reportModal">
+  <!-- ປຸ່ມຈັດການ (ຊ່ອນ/ສະແດງ ຕາມສິດ) -->
+  <div class="mb-3 d-flex justify-content-end gap-2">
+    <button class="btn btn-outline-success" onclick="exportToExcel()" data-i18n="btnExport">
+      📥 Export Excel
+    </button>
+    <button id="addReportBtn" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#reportModal" data-i18n="btnAddReport">
       ➕ ສົ່ງລາຍງານບັນຫາໃໝ່
     </button>
   </div>
 
   <!-- ຕາຕະລາງສະແດງຂໍ້ມູນ -->
   <div class="card p-4">
-    <h4>📋 ລາຍການບັນຫາທັງໝົດ</h4>
+    <h4 data-i18n="tableHeader">📋 ລາຍການບັນຫາທັງໝົດ</h4>
     <div class="table-responsive">
       <table class="table table-bordered table-striped text-nowrap">
         <thead class="table-dark">
           <tr>
-            <th>ບັນຫາ</th>
-            <th>ສະຖານທີ່</th>
-            <th>ວັນທີລາຍງານ</th>
-            <th>ຜູ້ລາຍງານ</th>
-            <th>ວັນທີດຳເນີນການ</th>
-            <th>ຜູ້ຊ້ອມແປງ</th>
-            <th>ສະຖານະ</th>
-            <th>ຈັດການ</th>
+            <th data-i18n="colIssue">ບັນຫາ</th>
+            <th data-i18n="colLocation">ສະຖານທີ່</th>
+            <th data-i18n="colDateReport">ວັນທີລາຍງານ</th>
+            <th data-i18n="colReporter">ຜູ້ລາຍງານ</th>
+            <th data-i18n="colDateProcess">ວັນທີດຳເນີນການ</th>
+            <th data-i18n="colRepairer">ຜູ້ຊ້ອມແປງ</th>
+            <th data-i18n="colStatus">ສະຖານະ</th>
+            <th data-i18n="colAction">ຈັດການ</th>
           </tr>
         </thead>
         <tbody id="dataTable">
@@ -144,16 +157,100 @@
 
 <script>
   // ແທນທີ່ດ້ວຍ URL ທີ່ໄດ້ຈາກການ Deploy (Web App URL)
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw-kh6nK95g7-J2V_iHdL6-Jn9Ek_CK1oucTCeWBg6lnLdZMFQD4o7X6Uj1L9RnFHeH/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxUkgP1o15kEqYGHEfiARnSu9XAfbOYIKu2TmtydZp0iVCsPBsd-l5q5f_IJIWGwkm8/exec";
+
+  const i18n = {
+    lo: {
+      processing: "ກຳລັງປະມວນຜົນ...",
+      modalTitleNew: "📝 ສົ່ງລາຍງານບັນຫາໃໝ່",
+      modalTitleEdit: "📝 ແກ້ໄຂລາຍງານບັນຫາ",
+      labelIssue: "ລາຍການບັນຫາ:",
+      msgSuccessReport: "ບັນທຶກລາຍງານສຳເລັດ!",
+      msgSuccessEdit: "ແກ້ໄຂລາຍງານສຳເລັດ!",
+      labelLocation: "ສະຖານທີ່:",
+      btnCancel: "ຍົກເລີກ",
+      btnSubmit: "ສົ່ງລາຍງານ",
+      btnUpdate: "ອັບເດດລາຍງານ",
+      loginHeader: "ເຂົ້າສູ່ລະບົບ",
+      labelFullName: "ຊື່ ແລະ ນາມສະກຸນ:",
+      labelPosition: "ຕຳແໜ່ງການເຮັດວຽກ:",
+      optSelectPosition: "-- ເລືອກຕຳແໜ່ງ --",
+      roleReporter: "ຜູ້ລາຍງານ",
+      roleRepairer: "ຊ່າງຊ້ອມແປງ",
+      btnLogin: "ເຂົ້າສູ່ລະບົບ",
+      appTitle: "ລະບົບລາຍງານບັນຫາ ແລະ ການຊ້ອມແປງ",
+      btnLogout: "ອອກລະບົບ",
+      filterAll: "ລາຍການທັງໝົດ",
+      filterNew: "ລາຍການເພີ່ມໃໝ່",
+      filterRepairing: "ກຳລັງຊ້ອມແປງ",
+      filterMyTasks: "ວຽກຊ້ອມຂອງຂ້ອຍ",
+      filterCompleted: "ປະຫວັດສຳເລັດທັງໝົດ",
+      btnAddReport: "➕ ສົ່ງລາຍງານບັນຫາໃໝ່",
+      tableHeader: "📋 ລາຍການບັນຫາທັງໝົດ",
+      colIssue: "ບັນຫາ", colLocation: "ສະຖານທີ່", colDateReport: "ວັນທີລາຍງານ", 
+      colReporter: "ຜູ້ລາຍງານ", colDateProcess: "ວັນທີດຳເນີນການ", 
+      colRepairer: "ຜູ້ຊ້ອມແປງ", colStatus: "ສະຖານະ", colAction: "ຈັດການ",
+      statusWaiting: "ລໍຖ້າຊ້ອມແປງ", statusRepairing: "ກຳລັງຊ້ອມແປງ", statusCompleted: "ສຳເລັດແລ້ວ",
+      btnAccept: "ຮັບຊ້ອມ", btnClose: "ປິດວຽກ", btnEdit: "ແກ້ໄຂ", btnDelete: "ລຶບ",
+      userLabel: "ຜູ້ໃຊ້", posLabel: "ຕຳແໜ່ງ",
+      btnExport: "📥 ດາວໂຫລດ Excel",
+      msgConfirmDelete: "ທ່ານແນ່ໃຈຫຼືບໍ່ວ່າຕ້ອງການລຶບລາຍງານນີ້?", 
+      msgConfirmAccept: "ຢືນຢັນການຮັບວຽກຊ້ອມແປງ?",
+      msgConfirmComplete: "ຢືນຢັນການປິດວຽກຊ້ອມແປງ?",
+      msgNoPermission: "ຂໍອະໄພ, ຊ່າງຊ້ອມແປງບໍ່ມີສິດສົ່ງລາຍງານບັນຫາໃໝ່."
+    },
+    en: {
+      processing: "Processing...",
+      modalTitleNew: "📝 Report New Issue",
+      modalTitleEdit: "📝 Edit Report",
+      msgSuccessReport: "Reported successfully!",
+      msgSuccessEdit: "Updated successfully!",
+      labelIssue: "Issue Detail:",
+      labelLocation: "Location:",
+      btnCancel: "Cancel",
+      btnSubmit: "Submit",
+      btnUpdate: "Update",
+      loginHeader: "Login",
+      labelFullName: "Full Name:",
+      labelPosition: "Position:",
+      optSelectPosition: "-- Select Position --",
+      roleReporter: "Reporter",
+      roleRepairer: "Repairer",
+      btnLogin: "Login",
+      appTitle: "Repair Tracking System",
+      btnLogout: "Logout",
+      filterAll: "All Tasks",
+      filterNew: "New Tasks",
+      filterRepairing: "Repairing",
+      filterMyTasks: "My Tasks",
+      filterCompleted: "Completed History",
+      btnAddReport: "➕ Report New Issue",
+      tableHeader: "📋 All Maintenance Tasks",
+      colIssue: "Issue", colLocation: "Location", colDateReport: "Date Reported", 
+      colReporter: "Reporter", colDateProcess: "Process Date", 
+      colRepairer: "Repairer", colStatus: "Status", colAction: "Action",
+      statusWaiting: "Waiting", statusRepairing: "Repairing", statusCompleted: "Completed",
+      btnAccept: "Accept", btnClose: "Close", btnEdit: "Edit", btnDelete: "Delete",
+      userLabel: "User", posLabel: "Position",
+      btnExport: "📥 Export Excel",
+      msgConfirmDelete: "Are you sure you want to delete this report?", 
+      msgConfirmAccept: "Confirm to accept this task?",
+      msgConfirmComplete: "Confirm to complete this task?",
+      msgNoPermission: "Sorry, repairer cannot report new issues."
+    }
+  };
 
   let currentUser = null;
+  let currentLang = localStorage.getItem('repair_lang') || 'lo';
   let currentFilter = 'all';
+  let rawData = []; // ເກັບຂໍ້ມູນດິບໄວ້ໃຊ້ໃນການ Export
   let lastDataJson = ""; // ເກັບຂໍ້ມູນເກົ່າໄວ້ປຽບທຽບ
   let lastFilterState = ""; // ເກັບສະຖານະ Filter ເກົ່າໄວ້ປຽບທຽບ
   let isFetching = false; // ປ້ອງກັນການ Fetch ຊ້ຳຊ້ອນ
 
   // ກວດສອບການເຂົ້າລະບົບເມື່ອໂຫຼດໜ້າເວັບ
   document.addEventListener('DOMContentLoaded', () => {
+    applyTranslations();
     const savedUser = localStorage.getItem('repair_system_user');
     if (savedUser) {
       currentUser = JSON.parse(savedUser);
@@ -171,14 +268,32 @@
     }, 5000);
   });
 
+  function switchLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('repair_lang', lang);
+    applyTranslations();
+    if (currentUser) showMainContent();
+    loadData(false);
+  }
+
+  function applyTranslations() {
+    const langData = i18n[currentLang];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (langData[key]) el.innerText = langData[key];
+    });
+  }
+
   function showMainContent() {
     document.getElementById('loginSection').style.display = 'none';
     document.getElementById('appContent').style.display = 'block';
-    document.getElementById('userInfoDisplay').innerText = `ຜູ້ໃຊ້: ${currentUser.name} | ຕຳແໜ່ງ: ${currentUser.position}`;
+    const userPos = currentUser ? currentUser.position.trim() : "";
+    const langData = i18n[currentLang];
+    const displayPos = userPos === 'ຜູ້ລາຍງານ' ? langData.roleReporter : langData.roleRepairer;
+    document.getElementById('userInfoDisplay').innerText = `${langData.userLabel}: ${currentUser.name} | ${langData.posLabel}: ${displayPos}`;
     
-    // ກວດສອບຕຳແໜ່ງເພື່ອສະແດງ ຫຼື ເຊື່ອງປຸ່ມສົ່ງລາຍງານໃຫ້ຖືກຕ້ອງ
-    const isRepairer = currentUser.position.trim() === 'ຊ່າງຊ້ອມແປງ';
-    document.getElementById('addReportBtnContainer').style.display = isRepairer ? 'none' : 'block';
+    const isRepairer = userPos === 'ຊ່າງຊ້ອມແປງ';
+    document.getElementById('addReportBtn').style.display = isRepairer ? 'none' : 'inline-block';
     document.getElementById('repairerMenu').style.display = isRepairer ? 'block' : 'none';
   }
 
@@ -228,7 +343,7 @@
     if (isFetching) return;
     
     if (currentUser.position.trim() === 'ຊ່າງຊ້ອມແປງ') {
-      alert("ຂໍອະໄພ, ຊ່າງຊ້ອມແປງບໍ່ມີສິດສົ່ງລາຍງານບັນຫາໃໝ່.");
+      alert(i18n[currentLang].msgNoPermission);
       return;
     }
 
@@ -257,7 +372,7 @@
       toggleLoader(false);
       isFetching = false;
       if (data.status === 'success') {
-        alert(data.message);
+        alert(itemId ? i18n[currentLang].msgSuccessEdit : i18n[currentLang].msgSuccessReport);
         const modalInstance = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
         if (modalInstance) modalInstance.hide();
         loadData();
@@ -272,20 +387,20 @@
     document.getElementById('editItemId').value = id;
     document.getElementById('issue').value = issue;
     document.getElementById('location').value = location;
-    document.getElementById('reportFormButton').innerText = 'ອັບເດດລາຍງານ';
-    document.getElementById('reportModalLabel').innerText = '📝 ແກ້ໄຂລາຍງານບັນຫາ';
+    document.getElementById('reportFormButton').innerText = i18n[currentLang].btnUpdate;
+    document.getElementById('reportModalLabel').innerText = i18n[currentLang].modalTitleEdit;
     new bootstrap.Modal(document.getElementById('reportModal')).show();
   }
 
   function cancelEdit() {
     document.getElementById('reportForm').reset();
     document.getElementById('editItemId').value = '';
-    document.getElementById('reportFormButton').innerText = 'ສົ່ງລາຍງານ';
-    document.getElementById('reportModalLabel').innerText = '📝 ສົ່ງລາຍງານບັນຫາໃໝ່';
+    document.getElementById('reportFormButton').innerText = i18n[currentLang].btnSubmit;
+    document.getElementById('reportModalLabel').innerText = i18n[currentLang].modalTitleNew;
   }
 
   function deleteReport(id) {
-    if (confirm("ທ່ານແນ່ໃຈຫຼືບໍ່ວ່າຕ້ອງການລຶບລາຍງານນີ້?")) {
+    if (confirm(i18n[currentLang].msgConfirmDelete)) {
       if (isFetching) return;
       toggleLoader(true);
       isFetching = true;
@@ -313,6 +428,38 @@
     }
   }
 
+  function exportToExcel() {
+    if (rawData.length === 0) return alert("ບໍ່ມີຂໍ້ມູນໃນການ Export");
+    
+    const langData = i18n[currentLang];
+    const headers = [
+      langData.colIssue, langData.colLocation, langData.colDateReport,
+      langData.colReporter, langData.colDateProcess, langData.colRepairer, langData.colStatus
+    ];
+
+    const exportData = rawData.map(row => {
+      const status = row[8] || 'ລໍຖ້າຊ້ອມແປງ';
+      let translatedStatus = status;
+      if (status === 'ລໍຖ້າຊ້ອມແປງ') translatedStatus = langData.statusWaiting;
+      else if (status === 'ກຳລັງຊ້ອມແປງ') translatedStatus = langData.statusRepairing;
+      else if (status === 'ສຳເລັດແລ້ວ') translatedStatus = langData.statusCompleted;
+
+      return [
+        row[1], row[2], row[3], row[4], 
+        (status === 'ສຳເລັດແລ້ວ' ? row[6] : row[5]), 
+        row[7], 
+        translatedStatus
+      ];
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...exportData]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Reports");
+    
+    const fileName = `Repair_Report_${new Date().getTime()}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  }
+
   function loadData(showSpinner = false) {
     if (isFetching) return; // ຖ້າກຳລັງໂຫຼດຢູ່ ບໍ່ຕ້ອງເຮັດຊ້ຳ
     if (showSpinner) toggleLoader(true);
@@ -330,6 +477,8 @@
         }
 
         const data = jsonResponse.data; // ດຶງຂໍ້ມູນຕົວຈິງອອກມາ
+        rawData = data; // ເກັບໄວ້ Export
+        const langData = i18n[currentLang];
         const currentJson = JSON.stringify(data); 
         
         // ອັບເດດການແຈ້ງເຕືອນ (Badge) ໃນເມນູຊ່າງ
@@ -337,7 +486,7 @@
           const newCount = data.filter(row => (row[8] || 'ລໍຖ້າຊ້ອມແປງ') === 'ລໍຖ້າຊ້ອມແປງ').length;
           const dropdownFilterNew = document.getElementById('dropdownFilterNew');
           if (dropdownFilterNew) {
-            const originalText = 'ລາຍການເພີ່ມໃໝ່';
+            const originalText = langData.filterNew;
             dropdownFilterNew.innerHTML = `${originalText} ${newCount > 0 ? `<span class="badge rounded-pill bg-danger ms-2">${newCount}</span>` : ''}`;
 
             // If 'new' filter is currently active, update the main dropdown button text as well
@@ -359,42 +508,46 @@
           const status = row[8] || 'ລໍຖ້າຊ້ອມແປງ';
 
           let showRow = false; // ຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ false
-          const userPos = currentUser.position.trim();
+          const userPos = currentUser ? currentUser.position.trim() : "";
           
           if (userPos === 'ຊ່າງຊ້ອມແປງ') {
-            if (currentFilter === 'all') {
-              showRow = true; // ຖ້າເລືອກ "ລາຍການທັງໝົດ" ແມ່ນສະແດງທຸກແຖວ
-            } else if (currentFilter === 'new') {
-              showRow = (status === 'ລໍຖ້າຊ້ອມແປງ');
-            } else if (currentFilter === 'repairing') {
-              showRow = (status === 'ກຳລັງຊ້ອມແປງ');
-            } else if (currentFilter === 'my') {
-              showRow = (status === 'ກຳລັງຊ້ອມແປງ' && row[7] === currentUser.name);
-            } else if (currentFilter === 'completed') {
-              showRow = (status === 'ສຳເລັດແລ້ວ');
-            }
-          } else { // ສຳລັບຜູ້ລາຍງານ, ໃຫ້ສະແດງທຸກລາຍການ (ເພາະບໍ່ມີເມນູ Filter)
+            if (currentFilter === 'all') showRow = true;
+            else if (currentFilter === 'new') showRow = (status === 'ລໍຖ້າຊ້ອມແປງ');
+            else if (currentFilter === 'repairing') showRow = (status === 'ກຳລັງຊ້ອມແປງ');
+            else if (currentFilter === 'my') showRow = (status === 'ກຳລັງຊ້ອມແປງ' && row[7] === currentUser.name);
+            else if (currentFilter === 'completed') showRow = (status === 'ສຳເລັດແລ້ວ');
+          } else { 
             showRow = true;
           }
           if (!showRow) return;
 
+          let statusText = status;
+          if (status === 'ລໍຖ້າຊ້ອມແປງ') statusText = langData.statusWaiting;
+          else if (status === 'ກຳລັງຊ້ອມແປງ') statusText = langData.statusRepairing;
+          else if (status === 'ສຳເລັດແລ້ວ') statusText = langData.statusCompleted;
+
           const tr = document.createElement('tr');
+          
+          // ເພີ່ມສີພື້ນຫຼັງຖ້າເປັນວຽກລໍຖ້າຊ້ອມແປງ
+          if (status === 'ລໍຖ້າຊ້ອມແປງ') {
+            tr.classList.add('row-waiting');
+          }
           
           // ກຳນົດປຸ່ມຈັດການຕາມສະຖານະ ແລະ ສິດ
           let actionBtn = '';
           if (userPos === 'ຊ່າງຊ້ອມແປງ') {
             if (status === 'ລໍຖ້າຊ້ອມແປງ') {
-              actionBtn = `<button class="btn btn-sm btn-primary" onclick="updateStatus('${row[0]}', 'accept')">ຮັບຊ້ອມ</button>`;
+              actionBtn = `<button class="btn btn-sm btn-primary" onclick="updateStatus('${row[0]}', 'accept')">${langData.btnAccept}</button>`;
             } else if (status === 'ກຳລັງຊ້ອມແປງ' && row[7] === currentUser.name) {
-              actionBtn = `<button class="btn btn-sm btn-success" onclick="updateStatus('${row[0]}', 'complete')">ປິດວຽກ</button>`;
+              actionBtn = `<button class="btn btn-sm btn-success" onclick="updateStatus('${row[0]}', 'complete')">${langData.btnClose}</button>`;
             } else if (status === 'ສຳເລັດແລ້ວ') {
-              actionBtn = '<span class="badge bg-success">ສຳເລັດ</span>';
+              actionBtn = `<span class="badge bg-success">${langData.statusCompleted}</span>`;
             }
           } else {
             if (row[4] === currentUser.name && status === 'ລໍຖ້າຊ້ອມແປງ') {
               actionBtn = `
-                <button class="btn btn-sm btn-warning me-1" onclick="editReportForm('${row[0]}', '${row[1]}', '${row[2]}')">ແກ້ໄຂ</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteReport('${row[0]}')">ລຶບ</button>
+                <button class="btn btn-sm btn-warning me-1" onclick="editReportForm('${row[0]}', '${row[1]}', '${row[2]}')">${langData.btnEdit}</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteReport('${row[0]}')">${langData.btnDelete}</button>
               `;
             } else {
               actionBtn = status === 'ສຳເລັດແລ້ວ' ? '✅' : '⏳';
@@ -407,7 +560,7 @@
             <td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td>
             <td>${(status === 'ສຳເລັດແລ້ວ' && row[6]) ? row[6] : (row[5] || '-')}</td>
             <td>${row[7] || '-'}</td>
-            <td class="fw-bold ${statusClass}">${status}</td>
+            <td class="fw-bold ${statusClass}">${statusText}</td>
             <td class="text-center">${actionBtn}</td>
           `;
           tbody.appendChild(tr);
@@ -416,7 +569,7 @@
   }
 
   function updateStatus(id, action) {
-    const confirmMsg = action === 'accept' ? "ຢືນຢັນການຮັບວຽກຊ້ອມແປງ?" : "ຢືນຢັນການປິດວຽກຊ້ອມແປງ?";
+    const confirmMsg = action === 'accept' ? i18n[currentLang].msgConfirmAccept : i18n[currentLang].msgConfirmComplete;
     if (confirm(confirmMsg)) {
       toggleLoader(true);
       fetch(WEB_APP_URL, {

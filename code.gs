@@ -97,7 +97,7 @@ function editReport(id, issue, location, reporterName) {
       } else if (rowId == id) { // Found the ID, but conditions not met
         if (rowReporter !== reporterName) {
           Logger.log(`Edit failed for ID ${id}: Reporter mismatch. Expected ${reporterName}, got ${rowReporter}`);
-        throw new Error("ທ່ານບໍ່ມີສິດລຶບລາຍງານນີ້.");
+          throw new Error("ທ່ານບໍ່ມີສິດແກ້ໄຂລາຍງານນີ້.");
         } else if (rowStatus !== 'ລໍຖ້າຊ້ອມແປງ') {
           Logger.log(`Edit failed for ID ${id}: Status mismatch. Expected 'ລໍຖ້າຊ້ອມແປງ', got ${rowStatus}`);
           throw new Error("ບໍ່ສາມາດແກ້ໄຂໄດ້, ລາຍງານນີ້ຖືກຮັບຊ້ອມແປງແລ້ວ.");
