@@ -168,7 +168,7 @@
 
 <script>
   // ແທນທີ່ດ້ວຍ URL ທີ່ໄດ້ຈາກການ Deploy (Web App URL)
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwlsLkS_vYJu4_TcjyuHa_vmSANdQIc-SklaujGRm0DqIW-7Dmgt1x5L5rHzrv05lk/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxjvPgqg-sIJS6RtUlSVgHpDI-qYkItPV3D8uHFN9fxYNnRcJIjX2z7wSlf7V4NWhY/exec";
 
   const i18n = {
     lo: {
@@ -346,13 +346,27 @@
 
   document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const name = document.getElementById('userName').value;
+    const name = document.getElementById('userName').value.trim();
     const position = "ຜູ້ລາຍງານ";
     
-    currentUser = { name, position };
-    localStorage.setItem('repair_system_user', JSON.stringify(currentUser));
-    showMainContent();
-    loadData(true);
+    toggleLoader(true);
+    fetch(WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'login', name: name })
+    })
+    .then(res => res.json())
+    .then(data => {
+      toggleLoader(false);
+      if (data.status === 'success') {
+        currentUser = { name, position };
+        localStorage.setItem('repair_system_user', JSON.stringify(currentUser));
+        showMainContent();
+        loadData(true);
+      } else {
+        alert(data.message);
+      }
+    })
+    .catch(handleError);
   });
 
   function logout() {
