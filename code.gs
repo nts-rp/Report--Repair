@@ -10,10 +10,14 @@ function doGet(e) {
     }
   }
   
-  // ສົ່ງໜ້າ HTML ປົກກະຕິ (ຖ້າເປີດຜ່ານ Google Script URL)
-  return HtmlService.createHtmlOutputFromFile('index')
-    .setTitle('ລະບົບລາຍງານບັນຫາ')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  // ກວດສອບວ່າຕ້ອງການເປີດໜ້າໃດ (Default ແມ່ນ index)
+  let page = e.parameter.page === 'repair' ? 'repair' : 'index';
+  let title = page === 'repair' ? 'ລະບົບຊ່າງຊ້ອມແປງ' : 'ລະບົບລາຍງານບັນຫາ';
+
+  return HtmlService.createHtmlOutputFromFile(page)
+    .setTitle(title)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
 // ຮັບການສົ່ງຂໍ້ມູນຈາກພາຍນອກຜ່ານ POST
