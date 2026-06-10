@@ -67,6 +67,34 @@
   </div>
 </div>
 
+<!-- Modal ສຳລັບກັ່ນຕອງວັນທີ Export Excel -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exportModalLabel" data-i18n="modalExportTitle">📅 ເລືອກຊ່ວງວັນທີເພື່ອດາວໂຫຼດ Excel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="exportForm">
+          <div class="mb-3">
+            <label class="form-label" data-i18n="labelStartDate">ວັນທີເລີ່ມຕົ້ນ:</label>
+            <input type="text" id="startDate" class="form-control" placeholder="dd/mm/yyyy" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" data-i18n="labelEndDate">ວັນທີສິ້ນສຸດ:</label>
+            <input type="text" id="endDate" class="form-control" placeholder="dd/mm/yyyy" required>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="btnCancel">ຍົກເລີກ</button>
+            <button type="submit" class="btn btn-success" data-i18n="btnConfirmExport">ຢືນຢັນການດາວໂຫຼດ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ສ່ວນການເຂົ້າລະບົບ (Login Screen) -->
 <div id="loginSection">
   <div class="card p-4 shadow-sm border-0">
@@ -137,6 +165,8 @@
       <table class="table table-bordered table-striped text-nowrap">
         <thead class="table-dark">
           <tr>
+            <th data-i18n="colSeq">ລຳດັບ</th>
+            <th data-i18n="colReportId">ID ລາຍງານ</th>
             <th data-i18n="colIssue">ບັນຫາ</th>
             <th data-i18n="colLocation">ສະຖານທີ່</th>
             <th data-i18n="colDateReport">ວັນທີລາຍງານ</th>
@@ -186,6 +216,8 @@
       filterMyTasks: "ວຽກຊ້ອມຂອງຂ້ອຍ",
       filterCompleted: "ປະຫວັດສຳເລັດທັງໝົດ",
       btnAddReport: "➕ ສົ່ງລາຍງານບັນຫາໃໝ່",
+      colSeq: "ລຳດັບ",
+      colReportId: "ID ລາຍງານ",
       tableHeader: "📋 ລາຍການບັນຫາທັງໝົດ",
       colIssue: "ບັນຫາ", colLocation: "ສະຖານທີ່", colDateReport: "ວັນທີລາຍງານ", 
       colReporter: "ຜູ້ລາຍງານ", colDateProcess: "ວັນທີດຳເນີນການ", 
@@ -197,7 +229,11 @@
       msgConfirmDelete: "ທ່ານແນ່ໃຈຫຼືບໍ່ວ່າຕ້ອງການລຶບລາຍງານນີ້?", 
       msgConfirmAccept: "ຢືນຢັນການຮັບວຽກຊ້ອມແປງ?",
       msgConfirmComplete: "ຢືນຢັນການປິດວຽກຊ້ອມແປງ?",
-      msgNoPermission: "ຂໍອະໄພ, ຊ່າງຊ້ອມແປງບໍ່ມີສິດສົ່ງລາຍງານບັນຫາໃໝ່."
+      msgNoPermission: "ຂໍອະໄພ, ຊ່າງຊ້ອມແປງບໍ່ມີສິດສົ່ງລາຍງານບັນຫາໃໝ່.",
+      modalExportTitle: "📅 ເລືອກຊ່ວງວັນທີເພື່ອດາວໂຫຼດ Excel",
+      labelStartDate: "ວັນທີເລີ່ມຕົ້ນ (ວວ/ດດ/ປປປປ):",
+      labelEndDate: "ວັນທີສິ້ນສຸດ (ວວ/ດດ/ປປປປ):",
+      btnConfirmExport: "ຢືນຢັນການດາວໂຫຼດ"
     },
     en: {
       processing: "Processing...",
@@ -225,6 +261,8 @@
       filterMyTasks: "My Tasks",
       filterCompleted: "Completed History",
       btnAddReport: "➕ Report New Issue",
+      colSeq: "Order",
+      colReportId: "Report ID",
       tableHeader: "📋 All Maintenance Tasks",
       colIssue: "Issue", colLocation: "Location", colDateReport: "Date Reported", 
       colReporter: "Reporter", colDateProcess: "Process Date", 
@@ -236,7 +274,11 @@
       msgConfirmDelete: "Are you sure you want to delete this report?", 
       msgConfirmAccept: "Confirm to accept this task?",
       msgConfirmComplete: "Confirm to complete this task?",
-      msgNoPermission: "Sorry, repairer cannot report new issues."
+      msgNoPermission: "Sorry, repairer cannot report new issues.",
+      modalExportTitle: "📅 Select Date Range for Excel Export",
+      labelStartDate: "Start Date (dd/mm/yyyy):",
+      labelEndDate: "End Date (dd/mm/yyyy):",
+      btnConfirmExport: "Confirm Export"
     }
   };
 
@@ -262,11 +304,27 @@
     const modalEl = document.getElementById('reportModal');
     modalEl.addEventListener('hidden.bs.modal', cancelEdit);
 
+    // ຕັ້ງຄ່າເລີ່ມຕົ້ນໃຫ້ວັນທີໃນ Export Modal
+    setDefaultExportDates();
+
     // ຕັ້ງເວລາໃຫ້ກວດສອບຂໍ້ມູນໃໝ່ທຸກໆ 5 ວິນາທີ (ປັບໃຫ້ສະຖຽນຂຶ້ນ)
     setInterval(() => {
       if (currentUser) loadData(false); 
     }, 5000);
   });
+
+  function setDefaultExportDates() {
+    const today = new Date();
+    const lastWeek = new Date();
+    lastWeek.setDate(today.getDate() - 7); // ຄິດໄລ່ 7 ວັນກ່ອນໜ້າ
+
+    const formatDate = (d) => String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+
+    const startInput = document.getElementById('startDate');
+    const endInput = document.getElementById('endDate');
+    if (startInput) startInput.value = formatDate(lastWeek);
+    if (endInput) endInput.value = formatDate(today);
+  }
 
   function switchLang(lang) {
     currentLang = lang;
@@ -428,25 +486,63 @@
     }
   }
 
+  // ຟັງຊັນຈັດການການກັ່ນຕອງວັນທີກ່ອນ Export
+  document.getElementById('exportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    confirmExport();
+  });
+
   function exportToExcel() {
     if (rawData.length === 0) return alert("ບໍ່ມີຂໍ້ມູນໃນການ Export");
+    new bootstrap.Modal(document.getElementById('exportModal')).show();
+  }
+
+  function confirmExport() {
+    const startDateVal = document.getElementById('startDate').value;
+    const endDateVal = document.getElementById('endDate').value;
     
+    const parseReportDate = (dateStr) => {
+      if (!dateStr) return new Date(0);
+      // dateStr format: dd/MM/yyyy HH:mm:ss
+      const datePart = dateStr.split(' ')[0];
+      const parts = datePart.split('/');
+      if (parts.length !== 3) return new Date(0);
+      return new Date(parts[2], parts[1] - 1, parts[0]);
+    };
+
+    const start = parseReportDate(startDateVal);
+    start.setHours(0,0,0,0);
+    const end = parseReportDate(endDateVal);
+    end.setHours(23,59,59,999);
+
+    const filteredData = rawData.filter(row => {
+      const reportDate = parseReportDate(row[3]);
+      return reportDate >= start && reportDate <= end;
+    });
+
+    if (filteredData.length === 0) {
+      alert(currentLang === 'lo' ? "ບໍ່ມີຂໍ້ມູນໃນຊ່ວງວັນທີທີ່ເລືອກ" : "No data found in selected date range");
+      return;
+    }
+
     const langData = i18n[currentLang];
     const headers = [
-      langData.colIssue, langData.colLocation, langData.colDateReport,
+      langData.colReportId, 
+      langData.colIssue, langData.colLocation, langData.colDateReport, 
       langData.colReporter, langData.colDateProcess, langData.colRepairer, langData.colStatus
     ];
 
-    const exportData = rawData.map(row => {
+    const exportData = filteredData.map(row => {
       const status = row[8] || 'ລໍຖ້າຊ້ອມແປງ';
       let translatedStatus = status;
       if (status === 'ລໍຖ້າຊ້ອມແປງ') translatedStatus = langData.statusWaiting;
       else if (status === 'ກຳລັງຊ້ອມແປງ') translatedStatus = langData.statusRepairing;
       else if (status === 'ສຳເລັດແລ້ວ') translatedStatus = langData.statusCompleted;
-
+      
       return [
+        row[0], // ID
         row[1], row[2], row[3], row[4], 
-        (status === 'ສຳເລັດແລ້ວ' ? row[6] : row[5]), 
+        (status === 'ສຳເລັດແລ້ວ' ? row[6] : (status === 'ກຳລັງຊ້ອມແປງ' ? row[5] : '')), 
         row[7], 
         translatedStatus
       ];
@@ -456,8 +552,11 @@
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Reports");
     
-    const fileName = `Repair_Report_${new Date().getTime()}.xlsx`;
+    const fileName = `Repair_Report_${startDateVal.replace(/\//g, '-')}_to_${endDateVal.replace(/\//g, '-')}.xlsx`;
     XLSX.writeFile(workbook, fileName);
+
+    const modalInstance = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+    if (modalInstance) modalInstance.hide();
   }
 
   function loadData(showSpinner = false) {
@@ -477,6 +576,7 @@
         }
 
         const data = jsonResponse.data; // ດຶງຂໍ້ມູນຕົວຈິງອອກມາ
+        data.reverse(); // ຈັດລຽງຂໍ້ມູນແບບປີ້ນກັບ (ລາຍການຫຼ້າສຸດຂຶ້ນກ່ອນ)
         rawData = data; // ເກັບໄວ້ Export
         const langData = i18n[currentLang];
         const currentJson = JSON.stringify(data); 
@@ -504,7 +604,7 @@
 
         const tbody = document.getElementById('dataTable');
         tbody.innerHTML = '';
-        data.forEach(row => {
+        data.forEach((row, index) => { // ເພີ່ມ index ເພື່ອໃຊ້ສຳລັບລຳດັບ
           const status = row[8] || 'ລໍຖ້າຊ້ອມແປງ';
 
           let showRow = false; // ຕັ້ງຄ່າເລີ່ມຕົ້ນເປັນ false
@@ -557,6 +657,8 @@
           const statusClass = status === 'ລໍຖ້າຊ້ອມແປງ' ? 'text-danger' : (status === 'ກຳລັງຊ້ອມແປງ' ? 'text-warning' : 'text-success');
 
           tr.innerHTML = `
+            <td>${index + 1}</td> <!-- ລຳດັບ (Sequential Number) -->
+            <td>${row[0]}</td> <!-- ID ລາຍງານ -->
             <td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td>
             <td>${(status === 'ສຳເລັດແລ້ວ' && row[6]) ? row[6] : (row[5] || '-')}</td>
             <td>${row[7] || '-'}</td>
