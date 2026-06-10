@@ -132,7 +132,7 @@ function saveReport(data) {
   try {
     const sheet = initSheet();
     const id = new Date().getTime();
-    const reportDate = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
+    const reportDate = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MM/dd/yyyy HH:mm:ss");
     
     sheet.appendRow([
       id, 
@@ -165,7 +165,7 @@ function updateRepair(id, repairer, statusAction) {
   try {
   const sheet = initSheet();
   const data = sheet.getDataRange().getValues();
-  const dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
+  const dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MM/dd/yyyy HH:mm:ss");
 
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] == id) {

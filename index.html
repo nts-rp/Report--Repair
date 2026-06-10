@@ -187,7 +187,7 @@
 
 <script>
   // ແທນທີ່ດ້ວຍ URL ທີ່ໄດ້ຈາກການ Deploy (Web App URL)
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxUkgP1o15kEqYGHEfiARnSu9XAfbOYIKu2TmtydZp0iVCsPBsd-l5q5f_IJIWGwkm8/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzOhMGIme_OX6JqWWZQUdG2LasMaBQp8rrpqpATebxhubKZG2D4zdFT3uNOXQKWo94j/exec";
 
   const i18n = {
     lo: {
@@ -575,7 +575,19 @@
           return;
         }
 
-        const data = jsonResponse.data; // ດຶງຂໍ້ມູນຕົວຈິງອອກມາ
+        // ແປງວັນທີຈາກ MM/dd/yyyy (ໃນ Sheet) ເປັນ dd/MM/yyyy (ສຳລັບສະແດງຜົນ)
+        const data = jsonResponse.data.map(row => {
+          const toDDMM = (str) => {
+            if (!str || !str.includes('/')) return str;
+            const p = str.split(' ');
+            const d = p[0].split('/');
+            if (d.length === 3) return `${d[1]}/${d[0]}/${d[2]}${p[1] ? ' ' + p[1] : ''}`;
+            return str;
+          };
+          // ຈັດການຖັນວັນທີລາຍງານ (3), ວັນທີຮັບຊ້ອມ (5), ແລະ ວັນທີສຳເລັດ (6)
+          return row.map((val, idx) => (idx === 3 || idx === 5 || idx === 6) ? toDDMM(val) : val);
+        });
+
         data.reverse(); // ຈັດລຽງຂໍ້ມູນແບບປີ້ນກັບ (ລາຍການຫຼ້າສຸດຂຶ້ນກ່ອນ)
         rawData = data; // ເກັບໄວ້ Export
         const langData = i18n[currentLang];
