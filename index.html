@@ -168,7 +168,7 @@
 
 <script>
   // ແທນທີ່ດ້ວຍ URL ທີ່ໄດ້ຈາກການ Deploy (Web App URL)
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxjvPgqg-sIJS6RtUlSVgHpDI-qYkItPV3D8uHFN9fxYNnRcJIjX2z7wSlf7V4NWhY/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlQwMfaRE3rgyLu7NNYEJyxBlf8j3TDdwk8bA8mU6ayttvzEWqaSVxr8i_f8rz3W5n/exec";
 
   const i18n = {
     lo: {
@@ -559,13 +559,22 @@
     if (showSpinner) toggleLoader(true);
     isFetching = true;
     
-    fetch(WEB_APP_URL + "?action=read")
+    // ສົ່ງຊື່ຜູ້ໃຊ້ໄປກວດສອບພ້ອມກັບການດຶງຂໍ້ມູນ ເພື່ອເຊັກວ່າຖືກລຶບອອກຈາກ Sheet ຫຼືບໍ່
+    const url = WEB_APP_URL + "?action=read" + (currentUser ? "&user_name=" + encodeURIComponent(currentUser.name) : "");
+
+    fetch(url)
       .then(response => response.json())
       .then(jsonResponse => {
         if (showSpinner) toggleLoader(false);
         isFetching = false;
         
         if (jsonResponse.status === 'error') {
+          // ຖ້າຊື່ບໍ່ມີໃນລະບົບແລ້ວ ໃຫ້ບັງຄັບອອກຈາກລະບົບທັນທີ
+          if (jsonResponse.message.includes("ບໍ່ມີໃນລະບົບ") || jsonResponse.message.includes("ບໍ່ຖືກຕ້ອງ")) {
+            alert(jsonResponse.message);
+            logout();
+            return;
+          }
           alert("ຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ: " + jsonResponse.message);
           return;
         }
